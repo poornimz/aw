@@ -1,0 +1,9 @@
+{
+  "name": "Antariksh Watch",
+  "short_name": "Antariksh",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#07090E",
+  "theme_color": "#06B6D4",
+  "description": "Indian Space Mission & Startup Tracker — ISRO & NewSpace"
+}

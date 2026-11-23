@@ -1,0 +1,6 @@
+{
+  "name": "Antariksh Watch — Indian Space Mission & Startup Tracker",
+  "description": "Full-stack Indian Space Mission & Startup Tracker aggregating ISRO missions, launch vehicles, payloads, ISRO centres, and Indian NewSpace startups.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
