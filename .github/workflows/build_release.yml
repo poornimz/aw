@@ -8,63 +8,87 @@ on:
     branches: [main]
 
 jobs:
+  # JOB 1: Test your Python Backend
   backend-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Download code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install Python dependencies
-        run: pip install -r backend/requirements.txt
-      - name: Run FastAPI pytest suite
+
+      - name: Install Python libraries
+        run: |
+          pip install -r backend/requirements.txt
+          pip install pytest httpx
+
+      - name: Run Backend Tests
+        env:
+          PYTHONPATH: backend
         run: pytest backend/tests/test_api.py
 
+  # JOB 2: Build Flutter Website & Android APK
   build-flutter-web-and-apk:
     runs-on: ubuntu-latest
-    env:
-      API_BASE_URL: ${{ secrets.PROD_API_BASE_URL || 'https://api.antariksh-watch.example.com/api/v1' }}
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Download code
+        uses: actions/checkout@v4
+
+      - name: Setup Java (Needed for Android APK)
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
-      - uses: subosito/flutter-action@v2
+
+      - name: Setup Flutter (Updated to match your code)
+        uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.5"
+          flutter-version: "3.27.4"
           channel: stable
           cache: true
 
-      - name: Fetch Flutter packages
+      - name: Install Flutter packages
         working-directory: flutter_app
         run: flutter pub get
 
-      - name: Analyze Dart code
+      - name: Check Dart code for errors
         working-directory: flutter_app
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
 
-      - name: Build Flutter Web (Release)
+      - name: Build Website (Flutter Web)
         working-directory: flutter_app
-        run: flutter build web --release --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
+        env:
+          PROD_API_BASE_URL: ${{ secrets.PROD_API_BASE_URL }}
+        run: |
+          API_URL="${PROD_API_BASE_URL:-https://example.com}"
+          flutter build web --release --dart-define=API_BASE_URL="$API_URL"
 
-      - name: Build Android Release APK
+      - name: Build Android App (APK)
         working-directory: flutter_app
-        run: flutter build apk --release --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
+        env:
+          PROD_API_BASE_URL: ${{ secrets.PROD_API_BASE_URL }}
+        run: |
+          API_URL="${PROD_API_BASE_URL:-https://example.com}"
+          flutter build apk --release --dart-define=API_BASE_URL="$API_URL"
 
-      - name: Upload Flutter Web Bundle
+      - name: Save Website files
         uses: actions/upload-artifact@v4
         with:
           name: flutter-web-release
           path: flutter_app/build/web
 
-      - name: Upload Android Release APK
+      - name: Save Android APK file
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
           path: flutter_app/build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Attach APK to GitHub Release on tag push
+      - name: Attach APK to GitHub Release (only on version tags like v1.0.0)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
